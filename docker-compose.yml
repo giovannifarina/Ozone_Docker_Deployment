@@ -1,0 +1,149 @@
+services:
+  scm:
+    image: apache/ozone:2.2.1
+    container_name: ozone-scm
+    hostname: scm
+    command: ["ozone", "scm"]
+    ports:
+      - "9876:9876"
+    environment:
+      OZONE-SITE.XML_hdds.datanode.dir: "/data/hdds"
+      OZONE-SITE.XML_ozone.metadata.dirs: "/data/metadata"
+      OZONE-SITE.XML_ozone.om.address: "om"
+      OZONE-SITE.XML_ozone.om.http-address: "om:9874"
+      OZONE-SITE.XML_ozone.recon.address: "recon:9891"
+      OZONE-SITE.XML_ozone.recon.db.dir: "/data/metadata/recon"
+      OZONE-SITE.XML_ozone.replication: "1"
+      OZONE-SITE.XML_ozone.server.default.replication: "1"
+      OZONE-SITE.XML_ozone.scm.block.client.address: "scm"
+      OZONE-SITE.XML_ozone.scm.client.address: "scm"
+      OZONE-SITE.XML_ozone.scm.datanode.id.dir: "/data/metadata"
+      OZONE-SITE.XML_ozone.scm.names: "scm"
+      OZONE-SITE.XML_hdds.scm.safemode.min.datanode: "1"
+      OZONE-SITE.XML_hdds.scm.safemode.healthy.pipeline.pct: "0"
+      OZONE-SITE.XML_hdds.scm.safemode.pipeline.availability.check: "false"
+      OZONE-SITE.XML_hdds.scm.safemode.threshold.pct: "0"
+      ENSURE_SCM_INITIALIZED: "/data/metadata/scm/current/VERSION"
+      no_proxy: "om,recon,scm,s3g,localhost,127.0.0.1"
+
+  om:
+    image: apache/ozone:2.2.1
+    container_name: ozone-om
+    hostname: om
+    command: ["ozone", "om"]
+    ports:
+      - "9874:9874"
+    environment:
+      OZONE-SITE.XML_hdds.datanode.dir: "/data/hdds"
+      OZONE-SITE.XML_ozone.metadata.dirs: "/data/metadata"
+      OZONE-SITE.XML_ozone.om.address: "om"
+      OZONE-SITE.XML_ozone.om.http-address: "om:9874"
+      OZONE-SITE.XML_ozone.recon.address: "recon:9891"
+      OZONE-SITE.XML_ozone.recon.db.dir: "/data/metadata/recon"
+      OZONE-SITE.XML_ozone.replication: "1"
+      OZONE-SITE.XML_ozone.server.default.replication: "1"
+      OZONE-SITE.XML_ozone.scm.block.client.address: "scm"
+      OZONE-SITE.XML_ozone.scm.client.address: "scm"
+      OZONE-SITE.XML_ozone.scm.datanode.id.dir: "/data/metadata"
+      OZONE-SITE.XML_ozone.scm.names: "scm"
+      CORE-SITE.XML_hadoop.proxyuser.hadoop.hosts: "*"
+      CORE-SITE.XML_hadoop.proxyuser.hadoop.groups: "*"
+      ENSURE_OM_INITIALIZED: "/data/metadata/om/current/VERSION"
+      WAITFOR: "scm:9876"
+      no_proxy: "om,recon,scm,s3g,localhost,127.0.0.1"
+    depends_on:
+      - scm
+
+  datanode:
+    image: apache/ozone:2.2.1
+    container_name: ozone-datanode
+    hostname: datanode
+    command: ["ozone", "datanode"]
+    ports:
+      - "9864:9864"
+    environment:
+      OZONE-SITE.XML_hdds.datanode.dir: "/data/hdds"
+      OZONE-SITE.XML_ozone.metadata.dirs: "/data/metadata"
+      OZONE-SITE.XML_ozone.om.address: "om"
+      OZONE-SITE.XML_ozone.om.http-address: "om:9874"
+      OZONE-SITE.XML_ozone.recon.address: "recon:9891"
+      OZONE-SITE.XML_ozone.recon.db.dir: "/data/metadata/recon"
+      OZONE-SITE.XML_ozone.replication: "1"
+      OZONE-SITE.XML_ozone.server.default.replication: "1"
+      OZONE-SITE.XML_ozone.scm.block.client.address: "scm"
+      OZONE-SITE.XML_ozone.scm.client.address: "scm"
+      OZONE-SITE.XML_ozone.scm.datanode.id.dir: "/data/metadata"
+      OZONE-SITE.XML_ozone.scm.names: "scm"
+      WAITFOR: "scm:9876"
+      no_proxy: "om,recon,scm,s3g,localhost,127.0.0.1"
+    depends_on:
+      - scm
+
+  s3g:
+    image: apache/ozone:2.2.1
+    container_name: ozone-s3g
+    hostname: s3g
+    command: ["ozone", "s3g"]
+    ports:
+      - "9878:9878"
+    environment:
+      OZONE-SITE.XML_hdds.datanode.dir: "/data/hdds"
+      OZONE-SITE.XML_ozone.metadata.dirs: "/data/metadata"
+      OZONE-SITE.XML_ozone.om.address: "om"
+      OZONE-SITE.XML_ozone.om.http-address: "om:9874"
+      OZONE-SITE.XML_ozone.recon.address: "recon:9891"
+      OZONE-SITE.XML_ozone.recon.db.dir: "/data/metadata/recon"
+      OZONE-SITE.XML_ozone.replication: "1"
+      OZONE-SITE.XML_ozone.server.default.replication: "1"
+      OZONE-SITE.XML_ozone.scm.block.client.address: "scm"
+      OZONE-SITE.XML_ozone.scm.client.address: "scm"
+      OZONE-SITE.XML_ozone.scm.datanode.id.dir: "/data/metadata"
+      OZONE-SITE.XML_ozone.scm.names: "scm"
+      WAITFOR: "om:9874"
+      no_proxy: "om,recon,scm,s3g,localhost,127.0.0.1"
+    depends_on:
+      - om
+
+  recon:
+    image: apache/ozone:2.2.1
+    container_name: ozone-recon
+    hostname: recon
+    command: ["ozone", "recon"]
+    ports:
+      - "9888:9888"
+    environment:
+      OZONE-SITE.XML_hdds.datanode.dir: "/data/hdds"
+      OZONE-SITE.XML_ozone.metadata.dirs: "/data/metadata"
+      OZONE-SITE.XML_ozone.om.address: "om"
+      OZONE-SITE.XML_ozone.om.http-address: "om:9874"
+      OZONE-SITE.XML_ozone.recon.address: "recon:9891"
+      OZONE-SITE.XML_ozone.recon.db.dir: "/data/metadata/recon"
+      OZONE-SITE.XML_ozone.replication: "1"
+      OZONE-SITE.XML_ozone.server.default.replication: "1"
+      OZONE-SITE.XML_ozone.scm.block.client.address: "scm"
+      OZONE-SITE.XML_ozone.scm.client.address: "scm"
+      OZONE-SITE.XML_ozone.scm.datanode.id.dir: "/data/metadata"
+      OZONE-SITE.XML_ozone.scm.names: "scm"
+      WAITFOR: "om:9874"
+      no_proxy: "om,recon,scm,s3g,localhost,127.0.0.1"
+    depends_on:
+      - om
+
+  jupyter:
+    build:
+      context: .
+      dockerfile: Dockerfile.jupyter
+    image: ozone-jupyter:2.2.1
+    container_name: ozone-jupyter
+    hostname: jupyter
+    ports:
+      - "8888:8888"
+    environment:
+      OZONE_S3_ENDPOINT: "http://s3g:9878"
+      AWS_ACCESS_KEY_ID: "your-access-key"
+      AWS_SECRET_ACCESS_KEY: "your-secret-key"
+      AWS_DEFAULT_REGION: "us-east-1"
+    volumes:
+      - .:/workspace
+    depends_on:
+      - s3g
