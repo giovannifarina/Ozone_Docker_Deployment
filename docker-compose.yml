@@ -133,17 +133,18 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.jupyter
-    image: ozone-jupyter:2.2.1
-    container_name: ozone-jupyter
     hostname: jupyter
+    working_dir: /home/jovyan/work
+    command: start-notebook.py --IdentityProvider.token='' --ServerApp.password=''
     ports:
       - "8888:8888"
     environment:
-      OZONE_S3_ENDPOINT: "http://s3g:9878"
-      AWS_ACCESS_KEY_ID: "your-access-key"
-      AWS_SECRET_ACCESS_KEY: "your-secret-key"
-      AWS_DEFAULT_REGION: "us-east-1"
+      - JUPYTER_ENABLE_LAB=yes
+      - OZONE_S3_ENDPOINT=http://s3g:9878
+      - AWS_ACCESS_KEY_ID=your-access-key
+      - AWS_SECRET_ACCESS_KEY=your-secret-key
+      - AWS_DEFAULT_REGION=us-east-1
     volumes:
-      - .:/workspace
+      - .:/home/jovyan/work
     depends_on:
       - s3g

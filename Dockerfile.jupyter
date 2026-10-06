@@ -1,6 +1,7 @@
 FROM apache/ozone:2.2.1 AS ozone-dist
 
-FROM python:3.11-slim
+FROM jupyter/minimal-notebook:latest
+USER root
 
 # Install system dependencies and JRE for Ozone CLI
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -11,6 +12,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Copy Ozone binaries, libraries and log4j configuration from official image
 COPY --from=ozone-dist /opt/hadoop /opt/hadoop
 
+# Create logs directories to prevent log4j errors
+RUN mkdir -p /opt/hadoop/logs && chown ${NB_UID}:${NB_GID} /opt/hadoop/logs
+
 # Configure PATH, JAVA_HOME, and Hadoop/Ozone config directory
 ENV JAVA_HOME="/usr/lib/jvm/default-java"
 ENV PATH="/opt/hadoop/bin:${PATH}"
@@ -18,29 +22,15 @@ ENV OZONE_CONF_DIR="/etc/hadoop"
 
 # Create /etc/hadoop configuration pointing to the Ozone cluster services
 RUN mkdir -p /etc/hadoop && \
-    cp /opt/hadoop/etc/hadoop/log4j.properties /etc/hadoop/ 2>/dev/null || true && \
-    echo '<configuration>\n\
-<property><name>ozone.om.address</name><value>om</value></property>\n\
-<property><name>ozone.om.http-address</name><value>om:9874</value></property>\n\
-<property><name>ozone.scm.names</name><value>scm</value></property>\n\
-<property><name>ozone.scm.client.address</name><value>scm</value></property>\n\
-<property><name>ozone.replication</name><value>1</value></property>\n\
-<property><name>ozone.server.default.replication</name><value>1</value></property>\n\
-</configuration>' > /etc/hadoop/ozone-site.xml
+    printf 'log4j.rootLogger=WARN, CONSOLE\nlog4j.appender.CONSOLE=org.apache.log4j.ConsoleAppender\nlog4j.appender.CONSOLE.target=System.err\nlog4j.appender.CONSOLE.layout=org.apache.log4j.PatternLayout\nlog4j.appender.CONSOLE.layout.ConversionPattern=%%d{yy/MM/dd HH:mm:ss} %%p %%c{2}: %%m%%n\n' > /etc/hadoop/log4j.properties && \
+    printf '<configuration>\n<property><name>ozone.om.address</name><value>om</value></property>\n<property><name>ozone.om.http-address</name><value>om:9874</value></property>\n<property><name>ozone.scm.names</name><value>scm</value></property>\n<property><name>ozone.scm.client.address</name><value>scm</value></property>\n<property><name>ozone.replication</name><value>1</value></property>\n<property><name>ozone.server.default.replication</name><value>1</value></property>\n</configuration>\n' > /etc/hadoop/ozone-site.xml
 
-# Install Python packages for Jupyter, data manipulation and benchmarking
+# Install Python packages for data manipulation and benchmarking
 RUN pip install --no-cache-dir \
-    jupyterlab \
-    notebook \
     boto3 \
     botocore \
     requests \
     tqdm \
     pandas
 
-WORKDIR /workspace
-
-EXPOSE 8888
-
-# Launch JupyterLab directly
-CMD ["jupyter", "lab", "--ip=0.0.0.0", "--port=8888", "--no-browser", "--allow-root", "--ServerApp.token=''", "--ServerApp.password=''", "--ServerApp.allow_origin='*'"]
+USER ${NB_UID}
